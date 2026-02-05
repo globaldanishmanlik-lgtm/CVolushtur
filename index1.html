@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aleros CV System</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
+
+    <style>
+        /* --- GLOBAL STYLES --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; margin: 0; display: flex; flex-direction: column; min-height: 100vh; color: #374151; }
+        
+        /* SIDEBAR / NAVBAR SIMULATION */
+        .top-bar { background: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .logo { font-weight: 800; font-size: 20px; color: #2563eb; letter-spacing: 1px; }
+        .user-welcome { font-weight: 600; color: #111827; }
+        .menu-items { display: flex; gap: 20px; font-size: 14px; font-weight: 500; color: #6b7280; }
+        .menu-item.active { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: -15px; }
+
+        /* FORM CONTAINER */
+        .main-content { padding: 30px; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; margin-bottom: 20px; }
+        .card-header { background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #e5e7eb; font-weight: 700; color: #374151; font-size: 16px; display: flex; align-items: center; gap: 10px; }
+        .card-header::before { content: ''; display: block; width: 4px; height: 16px; background: #2563eb; border-radius: 2px; }
+        .card-body { padding: 25px; }
+
+        /* FORM ELEMENTS */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 6px; }
+        input, select { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; color: #1f2937; transition: 0.2s; width: 100%; box-sizing: border-box; }
+        input:focus, select:focus { border-color: #2563eb; outline: none; ring: 2px solid #bfdbfe; }
+        
+        .file-input-wrapper { border: 2px dashed #e5e7eb; padding: 15px; text-align: center; border-radius: 6px; background: #f9fafb; transition: 0.2s; }
+        .file-input-wrapper:hover { border-color: #2563eb; background: #eff6ff; }
+        input[type="file"] { border: none; background: transparent; font-size: 11px; }
+
+        .submit-btn { width: 100%; padding: 15px; background: #2563eb; color: white; font-weight: bold; border: none; cursor: pointer; font-size: 14px; border-radius: 6px; margin-top: 20px; transition: 0.2s; }
+        .submit-btn:hover { background: #1d4ed8; }
+        .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        .footer { text-align: center; font-size: 12px; color: #9ca3af; padding: 20px; margin-top: auto; border-top: 1px solid #e5e7eb; background: #fff; }
+
+        /* --- PDF TEMPLATE STYLES --- */
+        #pdf-generator-zone { position: absolute; top: 0; left: 0; z-index: -1000; visibility: hidden; }
+        
+        .pdf-page { 
+            width: 210mm; 
+            height: 296mm; 
+            padding: 15mm; 
+            background: white; 
+            position: relative; 
+            overflow: hidden; 
+            box-sizing: border-box; 
+            display: flex; 
+            flex-direction: column;
+            page-break-after: always;
+            font-family: 'Arial', sans-serif;
+        }
+        .pdf-page:last-child { page-break-after: avoid !important; }
+
+        .pdf-header { border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .pdf-title { font-size: 24px; font-weight: 800; color: #1e293b; text-transform: uppercase; }
+        .pdf-sub { font-size: 10px; color: #64748b; }
+
+        .pdf-section { margin-bottom: 15px; }
+        .pdf-sec-title { background: #f1f5f9; padding: 5px 10px; font-size: 11px; font-weight: 800; color: #1e293b; border-left: 4px solid #2563eb; margin-bottom: 8px; text-transform: uppercase; }
+        
+        .pdf-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+        .pdf-table td { padding: 4px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+        .lbl { font-weight: 700; color: #64748b; width: 35%; }
+        .val { color: #0f172a; font-weight: 600; }
+
+        .pdf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Attachment Grid */
+        .att-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 15px; height: 100%; }
+        .att-box { border: 1px solid #e2e8f0; display: flex; flex-direction: column; background: #fff; overflow: hidden; height: 100%; }
+        .att-label { background: #f8fafc; font-size: 10px; font-weight: 800; padding: 5px; text-align: center; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .att-content { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 5px; overflow: hidden; }
+        .att-content img { max-width: 95%; max-height: 95%; width: auto; height: auto; object-fit: contain; }
+
+        /* Admin Table */
+        .admin-btn-group { display: flex; gap: 5px; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; border-radius: 4px; border:none; cursor: pointer; color: white; }
+        .btn-blue { background: #2563eb; } .btn-red { background: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="logo">ALEROS</div>
+        <div class="menu-items">
+            <div class="menu-item">Dashboard</div>
+            <div class="menu-item active">CV Add</div>
+            <div class="menu-item">Reports</div>
+            <div class="menu-item" onclick="checkAdmin()" style="cursor:pointer; color:#ef4444;">Admin</div>
+        </div>
+        <div class="user-welcome">Welcome, <strong>BEGENCH</strong></div>
+    </div>
+
+    <div id="client-screen" class="main-content">
+        <form id="appForm">
+            
+            <div class="card">
+                <div class="card-header">Personal Information</div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Name</label><input type="text" id="in_name"></div>
+                        <div class="form-group"><label>Surname</label><input type="text" id="in_surname"></div>
+                        <div class="form-group"><label>Birth Place</label><input type="text" id="in_birth_place"></div>
+                        <div class="form-group"><label>Birth Date</label><input type="date" id="in_birth_date"></div>
+                        <div class="form-group"><label>Gender</label><select id="in_gender"><option>Male</option><option>Female</option></select></div>
+                        <div class="form-group"><label>Marital Status</label><select id="in_marital"><option>Single</option><option>Married</option></select></div>
+                        <div class="form-group"><label>Mother Name</label><input type="text" id="in_mother"></div>
+                        <div class="form-group"><label>Father Name</label><input type="text" id="in_father"></div>
+                        <div class="form-group"><label>Nationality</label><input type="text" id="in_nationality"></div>
+                        <div class="form-group"><label>Driver License</label><select id="in_driver"><option>None</option><option>B Class</option><option>A Class</option><option>E Class</option></select></div>
+                        <div class="form-group"><label>Religion</label><input type="text" id="in_religion"></div>
+                        <div class="form-group"><label>Child Count</label><input type="number" id="in_child" value="0"></div>
+                        <div class="form-group"><label>Passport Number</label><input type="text" id="in_passport_no"></div>
+                        <div class="form-group"><label>Passport Validity</label><input type="date" id="in_passport_date"></div>
+                        <div class="form-group"><label>Cigarette Use</label><select id="in_smoke"><option>No</option><option>Yes</option></select></div>
+                        <div class="form-group"><label>Height (CM)</label><input type="text" id="in_height"></div>
+                        <div class="form-group"><label>Weight (KG)</label><input type="text" id="in_weight"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Contact & Emergency</div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Phone</label><input type="text" id="in_phone"></div>
+                        <div class="form-group"><label>Email</label><input type="text" id="in_email"></div>
+                        <div class="form-group" style="grid-column: span 2;"><label>Address</label><input type="text" id="in_address"></div>
+                        <div class="form-group"><label>Emergency Contact Name</label><input type="text" id="in_emer_name"></div>
+                        <div class="form-group"><label>Emergency Phone</label><input type="text" id="in_emer_phone"></div>
+                        <div class="form-group"><label>Relationship</label><input type="text" id="in_emer_rel"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Work & Stay Permit (Turkey)</div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Have you been to Turkey before?</label><select id="in_tr_visit"><option>No</option><option>Yes</option></select></div>
+                        <div class="form-group"><label>Have you worked in Turkey before?</label><select id="in_tr_work"><option>No</option><option>Yes</option></select></div>
+                        <div class="form-group"><label>Residence permit in Turkey?</label><select id="in_tr_permit"><option>No</option><option>Yes</option></select></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Education & Experience</div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Last School</label><input type="text" id="in_school"></div>
+                        <div class="form-group"><label>Department</label><input type="text" id="in_dept"></div>
+                        <div class="form-group"><label>Graduation Date</label><input type="text" id="in_grad_date" placeholder="Year"></div>
+                    </div>
+                    <hr style="margin: 20px 0; border:0; border-top:1px solid #eee;">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Latest Company</label><input type="text" id="in_exp_comp"></div>
+                        <div class="form-group"><label>Position</label><input type="text" id="in_exp_pos"></div>
+                        <div class="form-group"><label>Start Date</label><input type="text" id="in_exp_start" placeholder="Year"></div>
+                        <div class="form-group"><label>Total Months</label><input type="text" id="in_exp_month"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Preferences & Skills</div>
+                <div class="card-body">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Preferred Department / Job</label>
+                        <select id="in_job_pref">
+                            <option value="">Select Job...</option>
+                            <option>Laundry Staff</option><option>Animator</option><option>Bartender</option>
+                            <option>General Area Cleaner</option><option>Guest Relations</option><option>Kitchen / Butcher</option>
+                            <option>Kitchen / Dishwasher</option><option>Kitchen / Cook</option><option>Mini Club Staff</option>
+                            <option>Receptionist</option><option>Room Attendant</option><option>Security</option>
+                            <option>SPA Receptionist</option><option>Spa Therapist</option><option>Waiter</option>
+                            <option>Warehouseman</option><option>Welcoming Hostess</option><option>Bellboy</option>
+                            <option>Carpenter</option><option>Electrician</option><option>Human Resources</option>
+                            <option>Lifeguard</option><option>Sales & Marketing</option><option>Construction Worker</option>
+                        </select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Language 1</label><input type="text" id="in_lang1" placeholder="English"></div>
+                        <div class="form-group"><label>Level</label><select id="in_lang1_lvl"><option>Low</option><option>Medium</option><option>High</option></select></div>
+                        <div class="form-group"><label>Office Programs</label><input type="text" id="in_office" placeholder="Word, Excel..."></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Person Files Information (Uploads)</div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Passport</label><div class="file-input-wrapper"><input type="file" id="in_passport_img" accept="image/*"></div></div>
+                        <div class="form-group"><label>Graduation Certificate</label><div class="file-input-wrapper"><input type="file" id="in_diploma_img" accept="image/*"></div></div>
+                        <div class="form-group"><label>Portrait (Vesikalık)</label><div class="file-input-wrapper"><input type="file" id="in_photo" accept="image/*"></div></div>
+                        <div class="form-group"><label>Photo Overview (Full Body)</label><div class="file-input-wrapper"><input type="file" id="in_fullbody_img" accept="image/*"></div></div>
+                        <div class="form-group"><label>Signature</label><div class="file-input-wrapper"><input type="file" id="in_sign_img" accept="image/*"></div></div>
+                        <div class="form-group"><label>Certificate 1</label><div class="file-input-wrapper"><input type="file" id="in_cert1_img" accept="image/*"></div></div>
+                        <div class="form-group"><label>Certificate 2</label><div class="file-input-wrapper"><input type="file" id="in_cert2_img" accept="image/*"></div></div>
+                        <div class="form-group"><label>Certificate 3</label><div class="file-input-wrapper"><input type="file" id="in_cert3_img" accept="image/*"></div></div>
+                        <div class="form-group"><label>Personal Video (Not for PDF)</label><div class="file-input-wrapper"><input type="file" id="in_video" accept="video/*"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="submit-btn" id="submitBtn">SAVE CV</button>
+        </form>
+    </div>
+
+    <div id="admin-screen" class="main-content" style="display:none;">
+        <div class="card">
+            <div class="card-header">
+                <span>CV List</span>
+                <button class="btn-sm btn-blue" onclick="loadFromFirebase()">Refresh</button>
+                <button class="btn-sm btn-red" onclick="logout()">Logout</button>
+            </div>
+            <div class="card-body">
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead style="background:#f9fafb; text-align:left;">
+                        <tr><th style="padding:10px;">Name</th><th>Job Preference</th><th>Nationality</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="admin-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">2026© Aleros Yazılım Ltd. Şti.</div>
+
+    <div id="pdf-generator-zone">
+        <div id="print-container">
+            <div class="pdf-page" id="page-1">
+                <div class="pdf-header">
+                    <div class="pdf-title">ALEROS CV</div>
+                    <div class="pdf-sub">Date: <span id="out_today"></span></div>
+                </div>
+
+                <div class="pdf-grid">
+                    <div>
+                        <div class="pdf-section">
+                            <div class="pdf-sec-title">Personal Information</div>
+                            <table class="pdf-table">
+                                <tr><td class="lbl">Name</td><td class="val" id="out_name"></td></tr>
+                                <tr><td class="lbl">Surname</td><td class="val" id="out_surname"></td></tr>
+                                <tr><td class="lbl">Birth Place/Date</td><td class="val"><span id="out_birth_place"></span> / <span id="out_birth_date"></span></td></tr>
+                                <tr><td class="lbl">Gender</td><td class="val" id="out_gender"></td></tr>
+                                <tr><td class="lbl">Marital Status</td><td class="val" id="out_marital"></td></tr>
+                                <tr><td class="lbl">Nationality</td><td class="val" id="out_nationality"></td></tr>
+                                <tr><td class="lbl">Parents</td><td class="val"><span id="out_mother"></span> & <span id="out_father"></span></td></tr>
+                                <tr><td class="lbl">Religion</td><td class="val" id="out_religion"></td></tr>
+                                <tr><td class="lbl">Height/Weight</td><td class="val"><span id="out_height"></span> cm / <span id="out_weight"></span> kg</td></tr>
+                                <tr><td class="lbl">Driver Lic.</td><td class="val" id="out_driver"></td></tr>
+                                <tr><td class="lbl">Smoker</td><td class="val" id="out_smoke"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="pdf-section">
+                            <div class="pdf-sec-title">Passport & Contact</div>
+                            <table class="pdf-table">
+                                <tr><td class="lbl">Passport No</td><td class="val" id="out_passport_no"></td></tr>
+                                <tr><td class="lbl">Validity</td><td class="val" id="out_passport_date"></td></tr>
+                                <tr><td class="lbl">Phone</td><td class="val" id="out_phone"></td></tr>
+                                <tr><td class="lbl">Email</td><td class="val" id="out_email"></td></tr>
+                                <tr><td class="lbl">Address</td><td class="val" id="out_address"></td></tr>
+                            </table>
+                        </div>
+                        <div class="pdf-section">
+                            <div class="pdf-sec-title">Emergency</div>
+                            <table class="pdf-table">
+                                <tr><td class="lbl">Name</td><td class="val" id="out_emer_name"></td></tr>
+                                <tr><td class="lbl">Phone</td><td class="val" id="out_emer_phone"></td></tr>
+                                <tr><td class="lbl">Relation</td><td class="val" id="out_emer_rel"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pdf-section">
+                    <div class="pdf-sec-title">Turkey History</div>
+                    <table class="pdf-table">
+                        <tr><td class="lbl">Visited Before?</td><td class="val" id="out_tr_visit"></td><td class="lbl">Worked Before?</td><td class="val" id="out_tr_work"></td><td class="lbl">Permit?</td><td class="val" id="out_tr_permit"></td></tr>
+                    </table>
+                </div>
+
+                <div class="pdf-section">
+                    <div class="pdf-sec-title">Education & Experience</div>
+                    <table class="pdf-table">
+                        <tr><td class="lbl">Last School</td><td class="val" id="out_school"></td><td class="lbl">Dept</td><td class="val" id="out_dept"></td><td class="lbl">Year</td><td class="val" id="out_grad_date"></td></tr>
+                    </table>
+                    <div style="height:5px;"></div>
+                    <table class="pdf-table">
+                        <tr><td class="lbl">Last Job</td><td class="val" id="out_exp_comp"></td><td class="lbl">Pos</td><td class="val" id="out_exp_pos"></td></tr>
+                        <tr><td class="lbl">Start</td><td class="val" id="out_exp_start"></td><td class="lbl">Duration</td><td class="val" id="out_exp_month"></td></tr>
+                    </table>
+                </div>
+
+                <div class="pdf-section">
+                    <div class="pdf-sec-title">Skills & Preferences</div>
+                    <table class="pdf-table">
+                        <tr><td class="lbl">Target Job</td><td class="val" id="out_job_pref"></td></tr>
+                        <tr><td class="lbl">Language</td><td class="val"><span id="out_lang1"></span> (<span id="out_lang1_lvl"></span>)</td></tr>
+                        <tr><td class="lbl">Office</td><td class="val" id="out_office"></td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="pdf-page" id="page-2">
+                <div class="pdf-sec-title">ATTACHMENTS (1/2)</div>
+                <div class="att-grid">
+                    <div class="att-box"><div class="att-label">Portrait</div><div class="att-content"><img id="out_photo_img"></div></div>
+                    <div class="att-box"><div class="att-label">Full Body Photo</div><div class="att-content"><img id="out_fullbody_img"></div></div>
+                    <div class="att-box"><div class="att-label">Passport</div><div class="att-content"><img id="out_passport_img"></div></div>
+                    <div class="att-box"><div class="att-label">Graduation Cert</div><div class="att-content"><img id="out_diploma_img"></div></div>
+                    <div class="att-box"><div class="att-label">Signature</div><div class="att-content"><img id="out_sign_img"></div></div>
+                    <div class="att-box"><div class="att-label">Certificate 1</div><div class="att-content"><img id="out_cert1_img"></div></div>
+                </div>
+            </div>
+
+            <div class="pdf-page" id="page-3">
+                <div class="pdf-sec-title">ATTACHMENTS (2/2)</div>
+                <div class="att-grid">
+                    <div class="att-box"><div class="att-label">Certificate 2</div><div class="att-content"><img id="out_cert2_img"></div></div>
+                    <div class="att-box"><div class="att-label">Certificate 3</div><div class="att-content"><img id="out_cert3_img"></div></div>
+                    <div class="att-box" style="border:none;"></div>
+                    <div class="att-box" style="border:none;"></div>
+                    <div class="att-box" style="border:none;"></div>
+                    <div class="att-box" style="border:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZM0I_QchjXgw-eAbds2nm3JvcrYPLr9A",
+            authDomain: "ngs-system-97961.firebaseapp.com",
+            projectId: "ngs-system-97961",
+            storageBucket: "ngs-system-97961.firebasestorage.app",
+            messagingSenderId: "65980395830",
+            appId: "1:65980395830:web:00949c5054e028bed30397",
+            measurementId: "G-MCYJFH6D6K"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        window.allApplications = [];
+        window.loadFromFirebase = loadFromFirebase;
+        window.gatherAndPrint = gatherAndPrint;
+        window.deleteFullApp = deleteFullApp;
+        window.checkAdmin = checkAdmin;
+        window.logout = logout;
+        
+        function checkAdmin() {
+            if(sessionStorage.getItem('isAdmin') === 'true') { 
+                document.getElementById('client-screen').style.display = 'none';
+                document.getElementById('admin-screen').style.display = 'block';
+                loadFromFirebase(); 
+            } else {
+                const pass = prompt("Admin Password:");
+                if(pass === "admin123") { 
+                    sessionStorage.setItem('isAdmin', 'true'); 
+                    document.getElementById('client-screen').style.display = 'none';
+                    document.getElementById('admin-screen').style.display = 'block';
+                    loadFromFirebase(); 
+                } else { alert("Wrong Password"); }
+            }
+        }
+        function logout() { 
+            sessionStorage.removeItem('isAdmin'); 
+            document.getElementById('client-screen').style.display = 'block';
+            document.getElementById('admin-screen').style.display = 'none';
+        }
+
+        // --- SUBMIT ---
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = "Saving Data & Files...";
+
+            try {
+                const submissionId = Date.now().toString();
+                const dateStr = new Date().toLocaleDateString('tr-TR');
+                
+                // Fields
+                const ids = ['in_name','in_surname','in_birth_place','in_birth_date','in_gender','in_marital','in_mother','in_father','in_nationality','in_driver','in_religion','in_child','in_passport_no','in_passport_date','in_smoke','in_height','in_weight','in_phone','in_email','in_address','in_emer_name','in_emer_phone','in_emer_rel','in_tr_visit','in_tr_work','in_tr_permit','in_school','in_dept','in_grad_date','in_exp_comp','in_exp_pos','in_exp_start','in_exp_month','in_job_pref','in_lang1','in_lang1_lvl','in_office'];
+                let data = {};
+                ids.forEach(id => { const el = document.getElementById(id); if(el) data[id] = el.value; });
+
+                await addDoc(collection(db, "aleros_main"), { submissionId, date: dateStr, data });
+
+                // Upload Helper (Firebase Storage)
+                const upload = async (fileId, path) => {
+                    const file = document.getElementById(fileId).files[0];
+                    if(!file) return null;
+                    // For video, we might want to check size, but standard logic here
+                    const fileRef = ref(storage, `aleros/${submissionId}/${path}_${file.name}`);
+                    await uploadBytes(fileRef, file);
+                    return await getDownloadURL(fileRef);
+                };
+
+                // Upload Files (Parallel)
+                const [p_url, fb_url, pass_url, dip_url, sig_url, c1_url, c2_url, c3_url, vid_url] = await Promise.all([
+                    upload('in_photo', 'portrait'),
+                    upload('in_fullbody_img', 'fullbody'),
+                    upload('in_passport_img', 'passport'),
+                    upload('in_diploma_img', 'diploma'),
+                    upload('in_sign_img', 'signature'),
+                    upload('in_cert1_img', 'cert1'),
+                    upload('in_cert2_img', 'cert2'),
+                    upload('in_cert3_img', 'cert3'),
+                    upload('in_video', 'video')
+                ]);
+
+                // Save Links to separate doc
+                await addDoc(collection(db, "aleros_files"), { 
+                    submissionId, 
+                    photo: p_url, fullbody: fb_url, passport: pass_url, 
+                    diploma: dip_url, signature: sig_url, 
+                    cert1: c1_url, cert2: c2_url, cert3: c3_url,
+                    video: vid_url
+                });
+
+                alert("CV Saved Successfully!");
+                document.getElementById('appForm').reset();
+
+            } catch(e) {
+                console.error(e);
+                alert("Error: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "SAVE CV";
+            }
+        });
+
+        // --- LOAD ---
+        async function loadFromFirebase() {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+            window.allApplications = [];
+            
+            try {
+                const q = query(collection(db, "aleros_main"));
+                const querySnapshot = await getDocs(q);
+                tbody.innerHTML = '';
+                
+                if(querySnapshot.empty) { tbody.innerHTML = '<tr><td colspan="4">No Data</td></tr>'; return; }
+
+                querySnapshot.forEach((doc) => {
+                    const app = doc.data();
+                    window.allApplications.push(app);
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td style="padding:10px;">${app.data.in_name} ${app.data.in_surname}</td><td>${app.data.in_job_pref}</td><td>${app.data.in_nationality}</td>
+                        <td>
+                            <button class="btn-sm btn-blue" onclick="gatherAndPrint('${app.submissionId}')">PDF</button> 
+                            <button class="btn-sm btn-red" onclick="deleteFullApp('${app.submissionId}')">DEL</button>
+                        </td>`;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // --- PDF ---
+        async function gatherAndPrint(submissionId) {
+            const btn = document.activeElement; if(btn) { btn.innerText = "..."; btn.disabled = true; }
+
+            try {
+                const mainApp = window.allApplications.find(a => a.submissionId === submissionId);
+                const data = mainApp.data;
+
+                // Fetch Files
+                const fQ = query(collection(db, "aleros_files"), where("submissionId", "==", submissionId));
+                const fSnap = await getDocs(fQ);
+                let files = {};
+                fSnap.forEach(d => files = d.data());
+
+                // Map Text
+                const map = {
+                    'in_name':'out_name', 'in_surname':'out_surname', 'in_birth_place':'out_birth_place', 'in_birth_date':'out_birth_date',
+                    'in_gender':'out_gender', 'in_marital':'out_marital', 'in_mother':'out_mother', 'in_father':'out_father',
+                    'in_nationality':'out_nationality', 'in_driver':'out_driver', 'in_religion':'out_religion', 'in_height':'out_height',
+                    'in_weight':'out_weight', 'in_passport_no':'out_passport_no', 'in_passport_date':'out_passport_date', 'in_smoke':'out_smoke',
+                    'in_phone':'out_phone', 'in_email':'out_email', 'in_address':'out_address', 'in_emer_name':'out_emer_name',
+                    'in_emer_phone':'out_emer_phone', 'in_emer_rel':'out_emer_rel', 'in_tr_visit':'out_tr_visit', 'in_tr_work':'out_tr_work',
+                    'in_tr_permit':'out_tr_permit', 'in_school':'out_school', 'in_dept':'out_dept', 'in_grad_date':'out_grad_date',
+                    'in_exp_comp':'out_exp_comp', 'in_exp_pos':'out_exp_pos', 'in_exp_start':'out_exp_start', 'in_exp_month':'out_exp_month',
+                    'in_job_pref':'out_job_pref', 'in_lang1':'out_lang1', 'in_lang1_lvl':'out_lang1_lvl', 'in_office':'out_office'
+                };
+                for(let k in map) {
+                    const el = document.getElementById(map[k]);
+                    if(el) el.innerText = data[k] || '';
+                }
+                document.getElementById('out_today').innerText = mainApp.date;
+
+                // Map Images (Proxy for CORS if needed, direct for now)
+                const setImg = async (id, url) => {
+                    const el = document.getElementById(id);
+                    if(!url) { el.src=''; el.style.display='none'; return; }
+                    try {
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        reader.onload = () => { el.src = reader.result; el.style.display='block'; };
+                        reader.readAsDataURL(blob);
+                    } catch(e) { console.error(e); }
+                };
+
+                await Promise.all([
+                    setImg('out_photo_img', files.photo), setImg('out_fullbody_img', files.fullbody),
+                    setImg('out_passport_img', files.passport), setImg('out_diploma_img', files.diploma),
+                    setImg('out_sign_img', files.signature), setImg('out_cert1_img', files.cert1),
+                    setImg('out_cert2_img', files.cert2), setImg('out_cert3_img', files.cert3)
+                ]);
+
+                // Render
+                document.getElementById('pdf-generator-zone').style.visibility = "visible";
+                const opt = { 
+                    margin: 0, 
+                    filename: `Aleros_${data.in_name}.pdf`, 
+                    image: { type: 'jpeg', quality: 0.98 }, 
+                    html2canvas: { scale: 3, useCORS: true, scrollX:0, scrollY:0 }, 
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+                };
+                html2pdf().set(opt).from(document.getElementById('print-container')).save().then(() => {
+                    document.getElementById('pdf-generator-zone').style.visibility = "hidden";
+                });
+
+            } catch(e) { alert("PDF Error: " + e.message); } 
+            finally { if(btn) { btn.innerText = "PDF"; btn.disabled = false; } }
+        }
+
+        async function deleteFullApp(submissionId) {
+            if(!confirm("Delete this CV?")) return;
+            // Simplified delete (Does not delete Storage files from here, only DB records)
+            try {
+                const q1 = query(collection(db, "aleros_main"), where("submissionId", "==", submissionId));
+                const s1 = await getDocs(q1);
+                s1.forEach(async d => await deleteDoc(d.ref));
+
+                const q2 = query(collection(db, "aleros_files"), where("submissionId", "==", submissionId));
+                const s2 = await getDocs(q2);
+                s2.forEach(async d => await deleteDoc(d.ref));
+                
+                loadFromFirebase();
+            } catch(e) { alert("Error: " + e.message); }
+        }
+    </script>
+</body>
+</html>
