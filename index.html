@@ -348,14 +348,15 @@
         import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
+        // --- GLOBAL PROJECT KEYS ---
         const firebaseConfig = {
-            apiKey: "AIzaSyBZM0I_QchjXgw-eAbds2nm3JvcrYPLr9A",
-            authDomain: "ngs-system-97961.firebaseapp.com",
-            projectId: "ngs-system-97961",
-            storageBucket: "ngs-system-97961.firebasestorage.app",
-            messagingSenderId: "65980395830",
-            appId: "1:65980395830:web:00949c5054e028bed30397",
-            measurementId: "G-MCYJFH6D6K"
+            apiKey: "AIzaSyDHywjjsMQN6l1d4mHv9z5UkKt9j9XUdNQ",
+            authDomain: "global-323e0.firebaseapp.com",
+            projectId: "global-323e0",
+            storageBucket: "global-323e0.firebasestorage.app",
+            messagingSenderId: "848140378397",
+            appId: "1:848140378397:web:3c8cb2a1b01e498e85c1f4",
+            measurementId: "G-L4L90VLSH8"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -411,7 +412,6 @@
                 const upload = async (fileId, path) => {
                     const file = document.getElementById(fileId).files[0];
                     if(!file) return null;
-                    // For video, we might want to check size, but standard logic here
                     const fileRef = ref(storage, `aleros/${submissionId}/${path}_${file.name}`);
                     await uploadBytes(fileRef, file);
                     return await getDownloadURL(fileRef);
@@ -510,7 +510,7 @@
                 }
                 document.getElementById('out_today').innerText = mainApp.date;
 
-                // Map Images (Proxy for CORS if needed, direct for now)
+                // Map Images
                 const setImg = async (id, url) => {
                     const el = document.getElementById(id);
                     if(!url) { el.src=''; el.style.display='none'; return; }
@@ -549,7 +549,6 @@
 
         async function deleteFullApp(submissionId) {
             if(!confirm("Delete this CV?")) return;
-            // Simplified delete (Does not delete Storage files from here, only DB records)
             try {
                 const q1 = query(collection(db, "aleros_main"), where("submissionId", "==", submissionId));
                 const s1 = await getDocs(q1);
@@ -564,5 +563,4 @@
         }
     </script>
 </body>
-
 </html>
